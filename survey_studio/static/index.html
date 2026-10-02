@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6f5">
+  <title>Survey Studio | Excel to PowerPoint</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css?v=4">
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
+  <script src="/static/app.js?v=3" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Workspace navigation">
+      <a class="identity" href="/" aria-label="Survey Studio home">
+        <span class="brand-icon"><span></span><span></span><span></span></span>
+        <span class="brand-wordmark">HKM<span>studio</span><small>RESEARCH WORKSPACE</small></span>
+      </a>
+      <div class="side-section-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Primary">
+        <a class="nav-item active" href="/" aria-current="page"><i data-lucide="layout-dashboard"></i> Overview</a>
+        <a class="nav-item" href="#workspace"><i data-lucide="file-spreadsheet"></i> New presentation</a>
+      </nav>
+      <div class="side-bottom">
+        <span class="side-status"><span class="status-dot"></span> Local workspace</span>
+        <span class="side-caption">Files stay on this computer</span>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Workspace</span><i data-lucide="chevron-right"></i><strong>Overview</strong></div>
+        <span class="topbar-right"><i data-lucide="shield-check"></i> Private by default</span>
+      </header>
+
+      <main class="page-content" id="workspace">
+        <div class="page-heading">
+          <div>
+            <span class="eyebrow"><span class="eyebrow-rule"></span> PRESENTATION WORKSPACE</span>
+            <h1>From responses to a clear story<span>.</span></h1>
+            <p class="intro">Turn an Excel survey into an editable PowerPoint presentation. Choose your data and let the report take shape.</p>
+          </div>
+          <div class="heading-mark" aria-hidden="true"><span>01</span><span class="mark-lines"></span><span>02</span><span class="mark-lines short"></span><span>03</span></div>
+        </div>
+
+        <div class="work-grid">
+          <section class="work-panel" aria-labelledby="create-heading">
+            <div class="panel-topline"><span>01 / CREATE</span><span>EXCEL &rarr; POWERPOINT</span></div>
+            <div class="panel-inner">
+              <div class="section-heading"><span class="step-index">01</span><div><h2 id="create-heading">Create a presentation</h2><p>Start with a workbook of survey responses.</p></div></div>
+
+              <form id="create-form" novalidate>
+                <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Choose or drop an Excel workbook">
+                  <input id="workbook" type="file" accept=".xlsx" hidden>
+                  <div class="drop-symbol"><i data-lucide="file-up"></i></div>
+                  <strong>Drop your Excel file here</strong>
+                  <span>or <span class="text-link">browse files</span> from your device</span>
+                  <small>Excel workbook (.xlsx) &middot; Up to 15 MB</small>
+                </div>
+                <div id="file-selection" class="selected-file" hidden>
+                  <span class="file-icon"><i data-lucide="file-spreadsheet"></i></span>
+                  <span class="file-details"><strong id="file-name"></strong><small id="file-size"></small></span>
+                  <button class="icon-button" id="remove-file" type="button" title="Remove selected file" aria-label="Remove selected file"><i data-lucide="x"></i></button>
+                </div>
+
+                <div class="field-row">
+                  <label for="sheet">Worksheet <span class="required">*</span></label>
+                  <div class="select-wrap"><select id="sheet" required disabled><option value="">Select a workbook first</option></select><i data-lucide="chevron-down"></i></div>
+                  <p class="field-hint" id="sheet-hint">Choose the sheet containing the responses you want to present.</p>
+                </div>
+
+                <div id="template-mobile-anchor"></div>
+
+                <div class="field-row mode-row">
+                  <div><label for="use-ai">Presentation planning</label><p class="field-hint">Local AI chooses the questions and slide order.</p></div>
+                  <label class="switch"><input id="use-ai" type="checkbox" checked><span class="switch-track"></span><span class="sr-only">Use local AI planning</span></label>
+                </div>
+                <div class="mode-note"><i data-lucide="sparkles"></i><span>Uses Ollama on this computer. Turn it off for an automatic, non-AI report.</span></div>
+
+                <div id="form-error" class="alert" role="alert" hidden></div>
+                <button id="generate" class="primary-button" type="submit" disabled><i data-lucide="wand-sparkles"></i><span>Generate presentation</span><i class="button-arrow" data-lucide="arrow-up-right"></i></button>
+              </form>
+            </div>
+          </section>
+
+          <aside class="right-column" aria-label="Presentation details">
+            <div id="template-desktop-anchor"></div>
+            <section class="template-panel" aria-label="Presentation template">
+              <div class="panel-topline"><span>02 / TEMPLATE</span><i data-lucide="presentation"></i></div>
+              <div class="template-panel-inner">
+                <h2>Presentation template</h2>
+                <p class="field-hint">Choose a design for your editable slides.</p>
+                <div class="template-section">
+                  <label class="template-upload" for="template-file"><i data-lucide="upload"></i><span id="template-upload-label">Upload template</span><span class="template-upload-detail">.pptx, up to 15 MB</span></label>
+                  <input id="template-file" type="file" accept=".pptx" hidden>
+                  <div id="uploaded-template" class="template-selected" hidden><span id="uploaded-template-name"></span><button id="preview-upload" type="button" title="Preview uploaded template" aria-label="Preview uploaded template"><i data-lucide="eye"></i></button><button id="clear-template" type="button" title="Remove uploaded template" aria-label="Remove uploaded template"><i data-lucide="x"></i></button></div>
+                  <div class="template-list-heading">Available templates</div>
+                  <div id="template-list" class="template-list" aria-label="Available templates"></div>
+                  <p class="field-hint" id="template-hint">Select a name to preview its slides.</p>
+                </div>
+              </div>
+            </section>
+            <section class="privacy-panel"><i data-lucide="lock-keyhole"></i><div><strong>Designed with privacy in mind</strong><p>Uploaded workbooks are removed after generation. Presentations expire after 7 days.</p></div></section>
+          </aside>
+        </div>
+
+        <section id="result" class="result" hidden aria-live="polite"><span class="result-icon"><i data-lucide="circle-check"></i></span><div><span class="result-label">READY TO PRESENT</span><h2 id="result-title">Your presentation is ready</h2><p id="result-details"></p></div><a id="download" class="download-button" href="#"><i data-lucide="download"></i> Download .pptx</a></section>
+
+        <dialog id="template-dialog" class="template-dialog" aria-labelledby="preview-title">
+          <div class="dialog-heading"><div><span class="eyebrow">TEMPLATE PREVIEW</span><h2 id="preview-title"></h2></div><button id="close-preview" class="icon-button" type="button" title="Close preview" aria-label="Close preview"><i data-lucide="x"></i></button></div>
+          <div id="template-slide" class="template-slide" role="img" aria-label="Template slide layout preview"></div>
+          <p class="preview-disclaimer">Layout preview shows text, solid colors and shapes. Example slides are removed; their theme and background colors inform the generated deck.</p>
+          <div class="slide-controls"><button id="previous-slide" type="button" title="Previous slide" aria-label="Previous slide"><i data-lucide="arrow-left"></i></button><span id="slide-position" aria-live="polite"></span><button id="next-slide" type="button" title="Next slide" aria-label="Next slide"><i data-lucide="arrow-right"></i></button></div>
+        </dialog>
+
+        <footer class="page-footer"><span>Survey Studio / Research operations</span><span>Local generation &middot; Editable output</span></footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
