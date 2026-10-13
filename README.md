@@ -9,25 +9,51 @@
 - `examples/`: sample workbooks and presentations
 - `storage/`: temporary uploads and seven-day downloads (ignored by Git)
 
-## Docker Compose (App + Ollama Stack)
+## Docker Deployment
 
-You can run the entire stack (FastAPI web app + containerized Ollama) with Docker Compose:
+The Docker deployment includes the FastAPI app and a separate Ollama service. Python packages are installed in the app image; Ollama model files are kept in a persistent Docker volume, not bundled into the image. The first model download is several gigabytes and requires internet access.
 
-```bash
+### Windows quick start
+
+Start Docker Desktop and wait until the Docker engine is running. From the project directory, run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\deploy.ps1
+```
+
+The script builds and starts the app and Ollama containers, waits for Ollama, pulls `llama3.1:8b` if needed, and prints the app URL: `http://127.0.0.1:8001`.
+
+To use a smaller model or skip downloading a model during deployment:
+
+```powershell
+.\deploy.ps1 -Model llama3.2:3b
+.\deploy.ps1 -SkipModelPull
+```
+
+When model pulling is skipped, download one later with `docker compose exec ollama ollama pull llama3.1:8b`. The app can still generate decks without Ollama planning; Python computes the statistics and the deterministic planner selects slides.
+
+### Docker Compose commands
+
+The deployment can also be managed directly:
+
+```powershell
 docker compose up -d --build
+docker compose exec ollama ollama pull llama3.1:8b
+docker compose ps
+docker compose logs -f survey-studio ollama
+docker compose down
 ```
 
-On first startup, pull the Ollama model into the container's volume:
+`docker compose down` stops and removes the containers but keeps the named `survey_storage` and `ollama_models` volumes. To remove those volumes as well, run `docker compose down --volumes`; this permanently deletes saved decks and downloaded models.
 
-```bash
-docker exec -it survey-ollama ollama pull llama3.1:8b
-```
+Compose routes the app to Ollama through `http://ollama:11434`. You can change the model with the `OLLAMA_MODEL` setting in `docker-compose.yml`. The Compose file includes an optional NVIDIA GPU reservation, commented out by default; enable it only on a Docker host configured for NVIDIA Container Toolkit. Without GPU access, Ollama runs on CPU and may respond more slowly.
 
-Access the app at `http://127.0.0.1:8001`. The containerized app automatically routes AI requests to the `ollama` container at `http://ollama:11434`. Generated decks and downloaded models persist in Docker volumes (`survey_storage` and `ollama_models`).
+If Docker reports a 500 error for `dockerDesktopLinuxEngine/_ping`, that is a Docker Desktop engine startup issue, not an application build error. Start or restart Docker Desktop, then check `docker version` and confirm it prints both **Client** and **Server** sections before running deployment again.
 
 ## Web app
 
-Install dependencies and start the local upload workspace:
+For a non-containerized local run, install dependencies and start the upload workspace:
 
 ```powershell
 py -m venv .venv
@@ -35,9 +61,9 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn survey_studio.app:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000/`. Upload an `.xlsx` workbook or `.csv` survey file (up to 15 MB), select its worksheet (`Data` for CSV), and generate the presentation. CSV supports one header row or two header rows: field IDs followed by question wording. Choose **Upload template** for a 16:9 `.pptx` or select an available design. Example slides are removed; the theme/master and solid backgrounds are retained. Local Ollama planning is on by default and chooses among Python-computed subgroups. Turn it off for deterministic slide selection.
+Open `http://127.0.0.1:8000/`. Upload an `.xlsx` workbook or `.csv` survey file (up to 15 MB), select its worksheet (`Data` for CSV), and generate the presentation. CSV supports one header row or two header rows: field IDs followed by question wording. Choose **Upload template** for a 16:9 `.pptx` or select an available design. Example slides are removed; the theme/master and solid backgrounds are retained. Local Ollama planning is on by default and chooses among Python-computed slide candidates. Turn it off for deterministic slide selection. For local Ollama, install Ollama on the host, pull a model, and set `OLLAMA_BASE_URL` if it is not using the default `http://127.0.0.1:11434`.
 
-Uploads are held under `storage/uploads` only during inspection, preview, or generation, then deleted. Finished decks can be downloaded for seven days. Cleanup runs at startup and hourly. This is a **local, single-user** workflow, not an authenticated public hosting setup. Uploaded records and comments are not sent to Ollama; the local planner receives question labels and computed aggregates.
+Uploads are held under `storage/uploads` only during inspection, preview, or generation, then deleted. Finished decks can be downloaded for seven days. Cleanup runs at startup and hourly. This is a **local, single-user** workflow, not an authenticated public hosting setup. Uploaded respondent rows are not sent to Ollama; the planner receives computed candidate summaries and identifiers.
 
 ## Command line
 
