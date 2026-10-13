@@ -1,6 +1,6 @@
 # Excel survey to editable PowerPoint
 
-`survey_studio.smart_slides` inspects a survey workbook and builds an editable deck from its columns. It uses Python to count responses and create native PowerPoint charts and text. Optional local Ollama AI chooses which questions deserve slides, their order, and chart orientation. No subscription or cloud API key is required. Without AI, it uses a deterministic plan. `survey_studio.survey_to_slides` is the original fixed, three-slide example.
+`survey_studio.smart_slides` analyzes survey files and builds editable PowerPoint decks. Python calculates all frequencies, means, score shares, and subgroup statistics. Optional local Ollama AI selects relevant computed subgroup slides and their order; it never supplies or changes figures. No subscription or cloud API key is required.
 
 ## Layout
 
@@ -8,6 +8,22 @@
 - `tests/`: generator and web workflow tests
 - `examples/`: sample workbooks and presentations
 - `storage/`: temporary uploads and seven-day downloads (ignored by Git)
+
+## Docker Compose (App + Ollama Stack)
+
+You can run the entire stack (FastAPI web app + containerized Ollama) with Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+On first startup, pull the Ollama model into the container's volume:
+
+```bash
+docker exec -it survey-ollama ollama pull llama3.1:8b
+```
+
+Access the app at `http://127.0.0.1:8001`. The containerized app automatically routes AI requests to the `ollama` container at `http://ollama:11434`. Generated decks and downloaded models persist in Docker volumes (`survey_storage` and `ollama_models`).
 
 ## Web app
 
@@ -19,37 +35,33 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn survey_studio.app:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000/`. Choose an `.xlsx` workbook (up to 15 MB), select its data worksheet, and generate a PowerPoint. Choose **Upload template** for your own 16:9 `.pptx`, or click a name under **Available templates** to select and preview it. Use the arrows to page through multi-slide template previews. The preview represents text and solid colors/shapes, not a pixel-perfect PowerPoint rendering. Example slides in an uploaded template are removed from the output; the generated report retains its theme/master and cycles through solid slide backgrounds. Shapes on example slides are not copied to output slides, so put persistent branding on the template's slide master. Local AI planning is on by default; it uses the installed `llama3.1:8b` Ollama model. Start Ollama and run `ollama pull llama3.1:8b` once if needed. Turn the switch off for deterministic slide selection with no Ollama dependency. The web app honors the `Presentation` sheet's title, first slide, audience, and output filename, while the selected worksheet overrides its `Data sheet` value.
+Open `http://127.0.0.1:8000/`. Upload an `.xlsx` workbook or `.csv` survey file (up to 15 MB), select its worksheet (`Data` for CSV), and generate the presentation. CSV supports one header row or two header rows: field IDs followed by question wording. Choose **Upload template** for a 16:9 `.pptx` or select an available design. Example slides are removed; the theme/master and solid backgrounds are retained. Local Ollama planning is on by default and chooses among Python-computed subgroups. Turn it off for deterministic slide selection.
 
-Uploads (workbooks and templates) are held under `storage/uploads` only during inspection, preview, or generation and deleted when each request finishes, including failed requests. Finished decks are stored under `storage/generated`, can be downloaded by their unguessable link, and are deleted after seven days. Cleanup runs at startup and hourly while the app is running; expired files are also rejected and removed when requested. This is a **local, single-user** workflow, not an authenticated public hosting setup. Do not expose the server to the internet with sensitive survey data. Uploaded workbooks are not sent to Ollama; the local planner receives question labels and aggregate counts.
+Uploads are held under `storage/uploads` only during inspection, preview, or generation, then deleted. Finished decks can be downloaded for seven days. Cleanup runs at startup and hourly. This is a **local, single-user** workflow, not an authenticated public hosting setup. Uploaded records and comments are not sent to Ollama; the local planner receives question labels and computed aggregates.
 
 ## Command line
 
-Run these commands from the project root with the dependencies installed above:
-
-The supplied `examples/demo_survey.xlsx` has 24 fictional responses plus a `Presentation` control sheet. `examples/survey_responses.xlsx` is also supported, even though it predates the optional control sheet. To generate another sample without overwriting the supplied files:
-
-```powershell
-.\.venv\Scripts\python.exe -m survey_studio.smart_slides --sample --input examples/new_survey.xlsx --output examples/new_survey.pptx
-```
+Run these commands from the project root with the dependencies installed above. The default input is the supplied real file `examples/data-set.csv`; set `--input` to use another workbook or CSV.
 
 For local AI, install Ollama, download a model once, and generate slides:
 
 ```powershell
 ollama pull llama3.1:8b
-.\.venv\Scripts\python.exe -m survey_studio.smart_slides --input examples/demo_survey.xlsx --output examples/ai_report.pptx --ai
+.\.venv\Scripts\python.exe -m survey_studio.smart_slides --input "examples/data-set.csv" --output "examples/Exterior design analysis.pptx" --ai
 ```
 
 Ollama must be running locally. Model download and inference use your disk and computer, not a subscription. If you already have another Ollama model, pass `--model your-model-name`. Inspect the selected slides before generating them with `--ai --plan-only`. Without `--ai`, Ollama is not needed:
 
 ```powershell
-.\.venv\Scripts\python.exe -m survey_studio.smart_slides --input examples/demo_survey.xlsx --plan-only
-.\.venv\Scripts\python.exe -m survey_studio.smart_slides --input examples/demo_survey.xlsx --output examples/new_report.pptx
+.\.venv\Scripts\python.exe -m survey_studio.smart_slides --input "examples/data-set.csv" --plan-only
+.\.venv\Scripts\python.exe -m survey_studio.smart_slides --input "examples/data-set.csv" --output "examples/Exterior design analysis.pptx"
 ```
 
 ## Workbook layout
 
-Put question names in the first row of the data sheet and one response per subsequent row. Headers need not match the sample. The generator detects categorical questions (2-12 answers, with sufficiently repeated values) and free-text comments; continuous numerical columns and unique identifiers are skipped. Missing answers are allowed. Up to four chart slides plus one comment slide are selected. Python calculates every displayed count; AI receives only question labels and aggregate counts, not individual responses or comments.
+CSV can have one header row or two header rows (field IDs followed by question wording); comma and semicolon delimiters are detected. Numeric integer 0-10/1-10 rating questions generate the mean, score distribution, top-box (9-10), and bottom-box (1-4) shares. Categorical questions generate response-frequency charts and rating subgroup cuts. Subgroups with fewer than 10 responses are combined into `Other` to avoid unstable tiny bases. Charts and subgroup tables are native editable PowerPoint objects.
+
+The supplied automotive dataset contains 203 cases, current brand/model, drive type, and exterior-design ratings. It does not contain demographics, pricing expectations, purchase intent/rejection, or emerging-brand acceptance. The deck calls out those gaps rather than inventing findings. Add those questions to future research data to enable those analyses.
 
 The optional `Presentation` sheet has `Setting` in A1 and `Value` in B1. Supported rows:
 
@@ -60,8 +72,8 @@ The optional `Presentation` sheet has `Setting` in A1 and `Value` in B1. Support
 | First slide | `Executive summary` | First-slide heading |
 | Audience | `Team leads` | Overview audience and AI planning context |
 | Data sheet | `Responses` | Worksheet containing answers |
-| Template | `company-template.pptx` | Optional empty 16:9 PowerPoint template beside the workbook |
+| Template | `company-template.pptx` | Optional 16:9 PowerPoint design reference beside the workbook |
 
-The template must contain no slides; its master/background are retained, while the generator draws its own text, accent colors, and charts on a blank layout. To override the workbook output location, use `--output other-report.pptx`. The generated deck is **not linked to Excel**. Rerunning replaces the output presentation, so choose a new output name if you have edited the previous deck in PowerPoint. Review selected charts and comments for accuracy and privacy before sharing.
+Templates must be 16:9. Example slides are removed; the template theme/master and solid backgrounds are retained. To override the output path, use `--output other-report.pptx`. The deck is **not linked to its source data**. Rerunning replaces a same-named output, so use another name to preserve edits.
 
 Run all tests with `.\.venv\Scripts\python.exe -m unittest discover -s tests -v`.

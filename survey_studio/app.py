@@ -1,6 +1,7 @@
 """Local survey-to-PowerPoint web application."""
 
 import asyncio
+import base64
 import os
 import re
 import time
@@ -9,6 +10,7 @@ from pathlib import Path
 from uuid import uuid4
 from zipfile import BadZipFile
 
+from lxml import etree
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,13 +21,15 @@ from pptx.dml.color import RGBColor
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parent.parent
-from .smart_slides import default_plan, load_survey, local_ai_plan, profile, render, validate_plan
+from .smart_slides import (BODY_FONT, BRAND_LOGO, HEADING_FONT, INK, LIGHT_BLUE, PALE, TEAL)
+from .smart_slides import (ai_analysis_plan, analyze_survey, default_analysis_plan,
+                           load_survey, render_analysis, validate_analysis_plan)
 
 STORAGE = Path(os.environ.get("PPT_STORAGE_DIR", ROOT / "storage"))
 UPLOADS = STORAGE / "uploads"
 GENERATED = STORAGE / "generated"
 TEMPLATES = STORAGE / "templates"
-AVAILABLE_TEMPLATES = {"research-light": "Research light", "blueprint": "Blueprint"}
+AVAILABLE_TEMPLATES = {"hkm-light": "HKM light", "hkm-grey": "HKM cool grey"}
 MAX_UPLOAD = 15 * 1024 * 1024
 RETENTION_SECONDS = 7 * 24 * 60 * 60
 FILE_ID = re.compile(r"^[0-9a-f]{32}$")
@@ -40,15 +44,34 @@ def cleanup_expired(now=None):
                 path.unlink(missing_ok=True)
 
 
+def _apply_hkm_theme(presentation):
+    theme_part = next(
+        relation.target_part for relation in presentation.slide_master.part.rels.values()
+        if relation.reltype.endswith("/theme")
+    )
+    root = etree.fromstring(theme_part.blob)
+    namespaces = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+    root.find(".//a:fontScheme/a:majorFont/a:latin", namespaces).set("typeface", HEADING_FONT)
+    root.find(".//a:fontScheme/a:minorFont/a:latin", namespaces).set("typeface", BODY_FONT)
+
+    colors = {"dk1": "595959", "lt1": "F2F2F2", "accent1": "013B67",
+              "accent2": "DBE3ED", "accent3": "595959"}
+    for slot, color in colors.items():
+        slot_element = root.find(f".//a:clrScheme/a:{slot}", namespaces)
+        color_element = next(iter(slot_element))
+        color_element.tag = f"{{{namespaces['a']}}}srgbClr"
+        color_element.attrib.clear()
+        color_element.set("val", color)
+    theme_part._blob = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+
+
 def create_available_templates():
     TEMPLATES.mkdir(parents=True, exist_ok=True)
     for template_id, colors in {
-        "research-light": ("FFFFFF", "F1F7FA"),
-        "blueprint": ("EDF5FA", "FFFFFF"),
+        "hkm-light": ("F2F2F2", "F2F2F2"),
+        "hkm-grey": ("D3D9E6", "F2F2F2"),
     }.items():
         path = TEMPLATES / f"{template_id}.pptx"
-        if path.exists():
-            continue
         presentation = Presentation()
         presentation.slide_width = Inches(13.333)
         presentation.slide_height = Inches(7.5)
@@ -56,10 +79,10 @@ def create_available_templates():
             slide = presentation.slides.add_slide(presentation.slide_layouts[6])
             slide.background.fill.solid()
             slide.background.fill.fore_color.rgb = RGBColor.from_string(color)
-            box = slide.shapes.add_textbox(Inches(0.8), Inches(1.0), Inches(11), Inches(1.2))
-            box.text_frame.text = "Overview" if number == 1 else "Data detail"
-            box.text_frame.paragraphs[0].font.size = Pt(32)
-            box.text_frame.paragraphs[0].font.color.rgb = RGBColor(29, 48, 53)
+            if BRAND_LOGO.is_file():
+                slide.shapes.add_picture(str(BRAND_LOGO), Inches(11.16), Inches(6.74),
+                                         width=Inches(1.8), height=Inches(0.62))
+        _apply_hkm_theme(presentation)
         presentation.save(path)
 
 
@@ -86,7 +109,21 @@ def template_preview(path):
                     "w": max(0, shape.width / presentation.slide_width * 100),
                     "h": max(0, shape.height / presentation.slide_height * 100)}
             if shape.has_text_frame and shape.text.strip():
-                item.update(kind="text", text=shape.text[:150])
+                run = next((run for paragraph in shape.text_frame.paragraphs for run in paragraph.runs
+                            if run.text.strip()), None)
+                font_color = "#595959"
+                if run:
+                    try:
+                        if run.font.color.rgb:
+                            font_color = f"#{run.font.color.rgb}"
+                    except (AttributeError, TypeError, ValueError):
+                        pass
+                item.update(kind="text", text=shape.text[:150],
+                            font=run.font.name if run and run.font.name else BODY_FONT,
+                            color=font_color)
+            elif shape.shape_type == 13 and shape.image.content_type.startswith("image/"):
+                item.update(kind="image", data=f"data:{shape.image.content_type};base64,"
+                            f"{base64.b64encode(shape.image.blob).decode('ascii')}")
             else:
                 try:
                     color = shape.fill.fore_color.rgb
@@ -143,6 +180,8 @@ async def save_upload(file, destination, extension=".xlsx"):
 
 
 def sheet_names(path):
+    if Path(path).suffix.lower() == ".csv":
+        return ["Data"]
     workbook = load_workbook(path, read_only=True, data_only=True)
     try:
         sheets = [name for name in workbook.sheetnames if name != "Presentation"]
@@ -154,6 +193,8 @@ def sheet_names(path):
 
 
 def suggested_sheet(path, names):
+    if Path(path).suffix.lower() == ".csv":
+        return "Data"
     workbook = load_workbook(path, read_only=True, data_only=True)
     try:
         if "Presentation" in workbook:
@@ -165,14 +206,17 @@ def suggested_sheet(path, names):
         workbook.close()
 
 
-def plan_deck(path, sheet, ai):
+def plan_deck(path, sheet, ai, source_name=None, model=None):
+    model = model or os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
     if sheet not in sheet_names(path):
         raise ValueError("Selected worksheet does not exist.")
-    settings, headers, records = load_survey(path, sheet_name=sheet)
-    charts, quotes = profile(headers, records)
-    plan = validate_plan(local_ai_plan(charts, quotes, settings, "llama3.1:8b") if ai
-                         else default_plan(charts, quotes), charts, quotes)
-    return settings, records, charts, quotes, plan
+    settings, headers, records, labels = load_survey(path, sheet_name=sheet)
+    if source_name:
+        settings["Source name"] = source_name
+    analysis = analyze_survey(headers, records, labels)
+    plan = validate_analysis_plan(ai_analysis_plan(analysis, settings, model) if ai
+                                  else default_analysis_plan(analysis), analysis)
+    return settings, analysis, plan
 
 
 @app.get("/")
@@ -209,9 +253,13 @@ async def uploaded_preview(file: UploadFile = File(...)):
 @app.post("/api/inspect")
 async def inspect(file: UploadFile = File(...)):
     UPLOADS.mkdir(parents=True, exist_ok=True)
-    temporary = UPLOADS / f"{uuid4().hex}.xlsx"
+    extension = Path(file.filename or "").suffix.lower()
+    if extension not in (".xlsx", ".csv"):
+        await file.close()
+        raise HTTPException(400, "Select an .xlsx or .csv survey file.")
+    temporary = UPLOADS / f"{uuid4().hex}{extension}"
     try:
-        await save_upload(file, temporary)
+        await save_upload(file, temporary, extension)
         names = await asyncio.to_thread(sheet_names, temporary)
         return {"sheets": names, "suggested": await asyncio.to_thread(suggested_sheet, temporary, names)}
     except (ValueError, OSError, BadZipFile, InvalidFileException) as error:
@@ -225,11 +273,15 @@ async def generate(file: UploadFile = File(...), sheet: str = Form(...), ai: boo
                    template_id: str = Form(""), template_file: UploadFile | None = File(None)):
     UPLOADS.mkdir(parents=True, exist_ok=True)
     GENERATED.mkdir(parents=True, exist_ok=True)
-    temporary = UPLOADS / f"{uuid4().hex}.xlsx"
+    extension = Path(file.filename or "").suffix.lower()
+    if extension not in (".xlsx", ".csv"):
+        await file.close()
+        raise HTTPException(400, "Select an .xlsx or .csv survey file.")
+    temporary = UPLOADS / f"{uuid4().hex}{extension}"
     temporary_template = UPLOADS / f"{uuid4().hex}.pptx"
     output = None
     try:
-        await save_upload(file, temporary)
+        await save_upload(file, temporary, extension)
         if template_file and template_id:
             raise ValueError("Choose either an uploaded or an available template.")
         template = None
@@ -241,17 +293,20 @@ async def generate(file: UploadFile = File(...), sheet: str = Form(...), ai: boo
             if template_id not in AVAILABLE_TEMPLATES:
                 raise ValueError("Selected template is not available.")
             template = TEMPLATES / f"{template_id}.pptx"
-        settings, records, charts, quotes, plan = await asyncio.to_thread(plan_deck, temporary, sheet, ai)
+        settings, analysis, plan = await asyncio.to_thread(plan_deck, temporary, sheet, ai, file.filename)
         name = settings["Output name"]
+        if extension == ".csv":
+            name = f"{Path(file.filename).stem}-presentation.pptx"
         if not name or Path(name).name != name or Path(name).suffix.lower() != ".pptx":
             raise ValueError("Output name in Presentation must be a .pptx filename only.")
         download_name = re.sub(r"[^\w. -]", "_", Path(name).stem).strip(" .") + ".pptx"
         job_id = uuid4().hex
         output = GENERATED / f"{job_id}--{download_name}"
-        await asyncio.to_thread(render, settings, records, charts, quotes, plan, output, template)
+        await asyncio.to_thread(render_analysis, settings, analysis, plan, output, template)
         return {"id": job_id, "filename": download_name,
-                "slides": 1 + len(plan["charts"]) + int(plan["quotes"]),
-                "charts": len(plan["charts"]), "download": f"/api/files/{job_id}"}
+            "respondents": analysis["n"],
+            "slides": len(plan["slide_ids"]),
+            "charts": len(plan["slide_ids"]), "download": f"/api/files/{job_id}"}
     except (ValueError, OSError, BadZipFile, InvalidFileException) as error:
         if output:
             output.unlink(missing_ok=True)

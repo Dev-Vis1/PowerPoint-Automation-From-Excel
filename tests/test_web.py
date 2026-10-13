@@ -2,6 +2,8 @@ import os
 import tempfile
 import time
 import unittest
+from zipfile import ZipFile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -47,7 +49,7 @@ class WebWorkflowTests(unittest.TestCase):
 
     def upload(self, route, source, data=None):
         with source.open("rb") as stream:
-            return self.client.post(route, files={"file": ("test.xlsx", stream)}, data=data or {})
+            return self.client.post(route, files={"file": (source.name, stream)}, data=data or {})
 
     def test_select_generate_download_and_remove_upload(self):
         source = self.workbook()
@@ -61,7 +63,7 @@ class WebWorkflowTests(unittest.TestCase):
         self.assertEqual(list(web.UPLOADS.iterdir()), [])
         download = self.client.get(generated.json()["download"])
         self.assertEqual(download.status_code, 200)
-        self.assertEqual(len(Presentation(web.GENERATED.glob("*.pptx").__next__()).slides), 2)
+        self.assertEqual(len(Presentation(web.GENERATED.glob("*.pptx").__next__()).slides), 1)
         self.assertIn("customer-brief.pptx", download.headers["content-disposition"])
 
     def test_bad_selection_does_not_store_workbook(self):
@@ -98,12 +100,20 @@ class WebWorkflowTests(unittest.TestCase):
         preview = self.client.get(f"/api/templates/{template_id}/preview")
         self.assertEqual(preview.status_code, 200)
         self.assertEqual(len(preview.json()["slides"]), 2)
+        self.assertTrue(any(item["kind"] == "image" for item in preview.json()["slides"][0]["items"]))
         generated = self.upload("/api/generate", self.workbook(),
                                 {"sheet": "Second", "ai": "false", "template_id": template_id})
         self.assertEqual(generated.status_code, 200, generated.text)
         deck = Presentation(next(web.GENERATED.glob("*.pptx")))
-        self.assertEqual(len(deck.slides), 2)
-        self.assertEqual(deck.slides[0].background.fill.fore_color.rgb, RGBColor(255, 255, 255))
+        self.assertEqual(len(deck.slides), 1)
+        self.assertEqual(deck.slides[0].background.fill.fore_color.rgb, RGBColor(242, 242, 242))
+        template_path = web.TEMPLATES / f"{template_id}.pptx"
+        with ZipFile(template_path) as archive:
+            theme = ET.fromstring(archive.read("ppt/theme/theme1.xml"))
+        ns = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+        self.assertEqual(theme.find(".//a:fontScheme/a:majorFont/a:latin", ns).get("typeface"), "Tw Cen MT")
+        self.assertEqual(theme.find(".//a:fontScheme/a:minorFont/a:latin", ns).get("typeface"), "Century Gothic")
+        self.assertEqual(theme.find(".//a:clrScheme/a:accent1/a:srgbClr", ns).get("val"), "013B67")
 
     def test_uploaded_multislide_template_preview_and_generation(self):
         template = Path(self.storage.name) / "own.pptx"
@@ -126,8 +136,23 @@ class WebWorkflowTests(unittest.TestCase):
         self.assertEqual(generated.status_code, 200, generated.text)
         self.assertEqual(list(web.UPLOADS.iterdir()), [])
         deck = Presentation(next(web.GENERATED.glob("*.pptx")))
-        self.assertEqual(len(deck.slides), 2)
+        self.assertEqual(len(deck.slides), 1)
         self.assertEqual(deck.slides[0].background.fill.fore_color.rgb, RGBColor.from_string("EDF5FA"))
+
+    def test_real_two_header_csv_inspection_and_generation(self):
+        source = Path(__file__).parents[1] / "examples" / "data-set.csv"
+        inspection = self.upload("/api/inspect", source)
+        self.assertEqual(inspection.status_code, 200, inspection.text)
+        self.assertEqual(inspection.json(), {"sheets": ["Data"], "suggested": "Data"})
+        generated = self.upload("/api/generate", source, {"sheet": "Data", "ai": "false"})
+        self.assertEqual(generated.status_code, 200, generated.text)
+        result = generated.json()
+        self.assertEqual(result["respondents"], 203)
+        self.assertEqual(result["slides"], 6)
+        self.assertEqual(list(web.UPLOADS.iterdir()), [])
+        deck = Presentation(next(web.GENERATED.glob("*.pptx")))
+        self.assertEqual(len(deck.slides), result["slides"])
+        self.assertGreaterEqual(sum(shape.has_chart for slide in deck.slides for shape in slide.shapes), 6)
 
     def test_invalid_template_does_not_leave_uploads(self):
         response = self.client.post("/api/templates/preview", files={"file": ("bad.pptx", b"not a pptx")})

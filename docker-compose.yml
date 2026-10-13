@@ -1,0 +1,36 @@
+services:
+  survey-studio:
+    build: .
+    container_name: survey-studio
+    ports:
+      - "8001:8001"
+    environment:
+      - PPT_STORAGE_DIR=/app/storage
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3.1:8b
+    volumes:
+      - survey_storage:/app/storage
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: survey-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+    # If deploying on a machine with NVIDIA GPU, uncomment the following block:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+volumes:
+  survey_storage:
+  ollama_models:

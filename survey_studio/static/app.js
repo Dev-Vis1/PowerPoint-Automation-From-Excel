@@ -40,13 +40,21 @@ function renderPreview() {
   canvas.replaceChildren();
   canvas.style.backgroundColor = slide.background;
   for (const item of slide.items) {
-    const element = document.createElement('div');
-    element.className = item.kind === 'text' ? 'slide-item slide-text' : 'slide-item slide-block';
+    const element = document.createElement(item.kind === 'image' ? 'img' : 'div');
+    element.className = item.kind === 'text' ? 'slide-item slide-text'
+      : item.kind === 'image' ? 'slide-item slide-image' : 'slide-item slide-block';
     element.style.left = `${item.x}%`;
     element.style.top = `${item.y}%`;
     element.style.width = `${item.w}%`;
     element.style.height = `${item.h}%`;
-    if (item.kind === 'text') element.textContent = item.text;
+    if (item.kind === 'text') {
+      element.textContent = item.text;
+      element.style.fontFamily = item.font || '';
+      element.style.color = item.color || '';
+    } else if (item.kind === 'image') {
+      element.src = item.data;
+      element.alt = 'Template logo';
+    }
     else element.style.backgroundColor = item.color;
     canvas.append(element);
   }
@@ -164,7 +172,7 @@ async function choose(file) {
   const current = inspection;
   reset();
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.xlsx')) return error('Please select an .xlsx workbook.');
+  if (!/\.(xlsx|csv)$/i.test(file.name)) return error('Please select an .xlsx or .csv survey file.');
   if (file.size > 15 * 1024 * 1024) return error('Workbook exceeds the 15 MB limit.');
   selectedFile = file;
   fileName.textContent = file.name;
@@ -224,7 +232,7 @@ document.querySelector('#create-form').addEventListener('submit', async event =>
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail || 'Generation failed.');
     document.querySelector('#result-title').textContent = payload.filename;
-    document.querySelector('#result-details').textContent = `${payload.slides} editable slides  ·  ${payload.charts} native charts  ·  Available for 7 days`;
+    document.querySelector('#result-details').textContent = `${payload.respondents} responses  ·  ${payload.slides} editable slides  ·  ${payload.charts} native charts  ·  Available for 7 days`;
     document.querySelector('#download').href = payload.download;
     result.hidden = false;
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

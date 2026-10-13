@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f6f5">
   <title>Survey Studio | Excel to PowerPoint</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css?v=4">
+  <link rel="stylesheet" href="/static/styles.css?v=5">
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
-  <script src="/static/app.js?v=3" defer></script>
+  <script src="/static/app.js?v=5" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -54,11 +55,11 @@
 
               <form id="create-form" novalidate>
                 <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Choose or drop an Excel workbook">
-                  <input id="workbook" type="file" accept=".xlsx" hidden>
+                  <input id="workbook" type="file" accept=".xlsx,.csv" hidden>
                   <div class="drop-symbol"><i data-lucide="file-up"></i></div>
                   <strong>Drop your Excel file here</strong>
                   <span>or <span class="text-link">browse files</span> from your device</span>
-                  <small>Excel workbook (.xlsx) &middot; Up to 15 MB</small>
+                  <small>Excel workbook (.xlsx) or survey CSV (.csv) &middot; Up to 15 MB</small>
                 </div>
                 <div id="file-selection" class="selected-file" hidden>
                   <span class="file-icon"><i data-lucide="file-spreadsheet"></i></span>
