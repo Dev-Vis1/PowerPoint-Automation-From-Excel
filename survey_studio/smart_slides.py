@@ -32,7 +32,7 @@ LIGHT_BLUE = RGBColor(219, 227, 237)
 MUTED = RGBColor(89, 89, 89)
 HEADING_FONT = "Tw Cen MT"
 BODY_FONT = "Century Gothic"
-BRAND_LOGO = Path(__file__).parent / "assets" / "hkm-logo.png"
+BRAND_LOGO = Path(__file__).parent / "assets" / "amo-logo.png"
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
 
 
@@ -771,7 +771,7 @@ def new_slide(presentation, title, index, total, source, question, templated,
     accent.fill.solid()
     accent.fill.fore_color.rgb = TEAL
     accent.line.fill.background()
-    text(slide, "HKM  /  CUSTOMER RESEARCH", 0.55, 0.30, 6.5, 0.30, 10, TEAL, True,
+    text(slide, "AMO  /  CUSTOMER RESEARCH", 0.55, 0.30, 6.5, 0.30, 10, TEAL, True,
          font_name=HEADING_FONT)
     text(slide, title[:90], 0.55, 0.87, 12.1, 0.88, 28, TEAL, True,
          font_name=HEADING_FONT)
@@ -911,7 +911,7 @@ def add_group_stats_table(slide, groups, top=5.0, x=0.7, width=11.9, compact=Fal
                 paragraph.font.color.rgb = INK
 
 
-def _master_has_hkm_logo(presentation):
+def _master_has_amo_logo(presentation):
     if not BRAND_LOGO.is_file():
         return False
     logo_bytes = BRAND_LOGO.read_bytes()
@@ -975,7 +975,7 @@ def render_analysis(settings, analysis, plan, output, template=None):
         for slide_id in list(presentation.slides._sldIdLst):
             presentation.part.drop_rel(slide_id.rId)
             presentation.slides._sldIdLst.remove(slide_id)
-        logo_on_master = _master_has_hkm_logo(presentation)
+        logo_on_master = _master_has_amo_logo(presentation)
     else:
         presentation.slide_width = Inches(13.333)
         presentation.slide_height = Inches(7.5)

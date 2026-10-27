@@ -95,6 +95,10 @@ class WebWorkflowTests(unittest.TestCase):
 
     def test_available_template_preview_and_generation(self):
         listing = self.client.get("/api/templates")
+        self.assertEqual(
+            listing.json(),
+            [{"id": "amo-light", "name": "AMO light"}, {"id": "amo-grey", "name": "AMO cool grey"}],
+        )
         self.assertEqual(listing.status_code, 200)
         template_id = listing.json()[0]["id"]
         preview = self.client.get(f"/api/templates/{template_id}/preview")

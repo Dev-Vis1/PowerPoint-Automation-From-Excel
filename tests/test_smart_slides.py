@@ -64,6 +64,7 @@ class SmartSlidesTests(unittest.TestCase):
                 self.assertEqual(logo.image.blob, BRAND_LOGO.read_bytes())
             all_text = "\n".join(shape.text for slide in deck.slides for shape in slide.shapes
                                  if shape.has_text_frame)
+            self.assertIn("AMO  /  CUSTOMER RESEARCH", all_text)
             first_slide_text = "\n".join(shape.text for shape in deck.slides[0].shapes if shape.has_text_frame)
             for slide in deck.slides:
                 slide_text = "\n".join(shape.text for shape in slide.shapes if shape.has_text_frame)

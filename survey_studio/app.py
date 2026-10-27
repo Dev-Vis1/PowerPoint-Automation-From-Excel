@@ -29,7 +29,7 @@ STORAGE = Path(os.environ.get("PPT_STORAGE_DIR", ROOT / "storage"))
 UPLOADS = STORAGE / "uploads"
 GENERATED = STORAGE / "generated"
 TEMPLATES = STORAGE / "templates"
-AVAILABLE_TEMPLATES = {"hkm-light": "HKM light", "hkm-grey": "HKM cool grey"}
+AVAILABLE_TEMPLATES = {"amo-light": "AMO light", "amo-grey": "AMO cool grey"}
 MAX_UPLOAD = 15 * 1024 * 1024
 RETENTION_SECONDS = 7 * 24 * 60 * 60
 FILE_ID = re.compile(r"^[0-9a-f]{32}$")
@@ -44,7 +44,7 @@ def cleanup_expired(now=None):
                 path.unlink(missing_ok=True)
 
 
-def _apply_hkm_theme(presentation):
+def _apply_amo_theme(presentation):
     theme_part = next(
         relation.target_part for relation in presentation.slide_master.part.rels.values()
         if relation.reltype.endswith("/theme")
@@ -68,8 +68,8 @@ def _apply_hkm_theme(presentation):
 def create_available_templates():
     TEMPLATES.mkdir(parents=True, exist_ok=True)
     for template_id, colors in {
-        "hkm-light": ("F2F2F2", "F2F2F2"),
-        "hkm-grey": ("D3D9E6", "F2F2F2"),
+        "amo-light": ("F2F2F2", "F2F2F2"),
+        "amo-grey": ("D3D9E6", "F2F2F2"),
     }.items():
         path = TEMPLATES / f"{template_id}.pptx"
         presentation = Presentation()
@@ -82,7 +82,7 @@ def create_available_templates():
             if BRAND_LOGO.is_file():
                 slide.shapes.add_picture(str(BRAND_LOGO), Inches(11.16), Inches(6.74),
                                          width=Inches(1.8), height=Inches(0.62))
-        _apply_hkm_theme(presentation)
+        _apply_amo_theme(presentation)
         presentation.save(path)
 
 
@@ -158,7 +158,7 @@ async def lifespan(app):
         await task
 
 
-app = FastAPI(title="HKM Survey Studio", lifespan=lifespan)
+app = FastAPI(title="AMO Survey Studio", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 

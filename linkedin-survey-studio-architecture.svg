@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="627" viewBox="0 0 1200 627" role="img" aria-labelledby="title description">
+  <title id="title">Survey Studio architecture</title>
+  <desc id="description">A Python and FastAPI application transforms CSV and Excel survey files into editable PowerPoint presentations. Optional local Ollama helps select slides using computed summaries, while Python calculates all statistics.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset="1" stop-color="#edf3f8"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#123e63"/>
+      <stop offset="1" stop-color="#0b2f4e"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="7" flood-color="#183a55" flood-opacity=".10"/>
+    </filter>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#168b96"/>
+    </marker>
+    <marker id="arrow-light" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0 0L8 4L0 8Z" fill="#74a7af"/>
+    </marker>
+    <style>
+      text { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+      .muted { fill: #61768a; }
+      .step-title { fill: #143b5b; font-size: 16px; font-weight: 700; }
+      .step-copy { fill: #60768b; font-size: 12px; }
+      .eyebrow { fill: #168b96; font-size: 11px; font-weight: 700; letter-spacing: 1.3px; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="627" fill="url(#background)"/>
+  <circle cx="1135" cy="20" r="180" fill="#dcebf4" opacity=".55"/>
+  <circle cx="1160" cy="8" r="122" fill="#c7e0ec" opacity=".42"/>
+
+  <text x="46" y="57" fill="#123e63" font-size="31" font-weight="750">From survey spreadsheet to editable insights</text>
+  <text x="48" y="89" class="muted" font-size="15">A Python-first architecture for automating survey reporting</text>
+  <rect x="902" y="44" width="250" height="34" rx="17" fill="#e1f2f2"/>
+  <circle cx="921" cy="61" r="4" fill="#168b96"/>
+  <text x="934" y="65" fill="#176d76" font-size="11" font-weight="700" letter-spacing=".7px">OPTIONAL LOCAL AI • NO CLOUD API</text>
+
+  <rect x="186" y="145" width="749" height="377" rx="22" fill="#f4f8fb" stroke="#b9ccd9" stroke-width="1.5" stroke-dasharray="6 6"/>
+  <rect x="210" y="132" width="275" height="27" rx="13.5" fill="#123e63"/>
+  <text x="226" y="150" fill="#ffffff" font-size="11" font-weight="700" letter-spacing="1">SURVEY STUDIO  /  FASTAPI + PYTHON</text>
+
+  <g filter="url(#shadow)">
+    <rect x="30" y="238" width="138" height="129" rx="17" fill="#ffffff" stroke="#d8e3eb"/>
+    <rect x="200" y="238" width="155" height="129" rx="17" fill="#ffffff" stroke="#d8e3eb"/>
+    <rect x="382" y="238" width="145" height="129" rx="17" fill="#ffffff" stroke="#d8e3eb"/>
+    <rect x="550" y="238" width="155" height="129" rx="17" fill="#ffffff" stroke="#d8e3eb"/>
+    <rect x="728" y="238" width="183" height="129" rx="17" fill="#ffffff" stroke="#c6e6e6"/>
+    <rect x="963" y="238" width="207" height="129" rx="17" fill="#ffffff" stroke="#d8e3eb"/>
+  </g>
+
+  <path d="M168 302H193" fill="none" stroke="#168b96" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M355 302H375" fill="none" stroke="#168b96" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M527 302H543" fill="none" stroke="#168b96" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M705 302H721" fill="none" stroke="#168b96" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <path d="M911 302H956" fill="none" stroke="#168b96" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <g>
+    <rect x="45" y="255" width="38" height="38" rx="11" fill="#e4f1f6"/>
+    <path d="M57 264h11l6 6v13H57z" fill="none" stroke="#397b98" stroke-width="1.7" stroke-linejoin="round"/>
+    <path d="M68 264v6h6M60 275h11M60 279h9" fill="none" stroke="#397b98" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="45" y="319" class="step-title">Survey data</text>
+    <text x="45" y="341" class="step-copy">Excel / CSV</text>
+  </g>
+
+  <g>
+    <circle cx="220" cy="274" r="19" fill="#e4f1f6"/>
+    <path d="M211 274h18M220 265v18M213 267l14 14M227 267l-14 14" stroke="#397b98" stroke-width="1.35" stroke-linecap="round"/>
+    <text x="200" y="319" class="step-title">Web app</text>
+    <text x="200" y="340" class="step-copy">HTML / CSS / JS</text>
+    <text x="200" y="355" class="step-copy">FastAPI upload flow</text>
+  </g>
+
+  <g>
+    <circle cx="402" cy="274" r="19" fill="#e4f1f6"/>
+    <path d="M393 267h18v4h-18zM393 274h18v4h-18zM393 281h18v1h-18z" fill="none" stroke="#397b98" stroke-width="1.5" stroke-linejoin="round"/>
+    <text x="382" y="319" class="step-title">Validate &amp; load</text>
+    <text x="382" y="340" class="step-copy">File, sheet &amp; template</text>
+    <text x="382" y="355" class="step-copy">CSV / openpyxl</text>
+  </g>
+
+  <g>
+    <circle cx="570" cy="274" r="19" fill="#e4f1f6"/>
+    <path d="M560 282v-8M568 282v-15M576 282v-11M584 282v-20" fill="none" stroke="#397b98" stroke-width="2.2" stroke-linecap="round"/>
+    <text x="550" y="319" class="step-title">Analyze data</text>
+    <text x="550" y="340" class="step-copy">Python calculates stats</text>
+    <text x="550" y="355" class="step-copy">Ratings &amp; subgroups</text>
+  </g>
+
+  <g>
+    <rect x="743" y="255" width="38" height="38" rx="11" fill="#def1f0"/>
+    <path d="M752 267h20v13h-20zM756 263h12M758 280v4M766 280v4" fill="none" stroke="#168b96" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="743" y="319" class="step-title">Plan the slides</text>
+    <text x="743" y="340" class="step-copy">Rules by default</text>
+    <text x="743" y="355" class="step-copy">Optional local Ollama</text>
+  </g>
+
+  <g>
+    <rect x="978" y="255" width="38" height="38" rx="11" fill="#e4f1f6"/>
+    <path d="M988 263h13l5 5v17h-18zM1001 263v6h5M992 275h10M992 279h10" fill="none" stroke="#397b98" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <text x="978" y="319" class="step-title">PowerPoint deck</text>
+    <text x="978" y="340" class="step-copy">python-pptx output</text>
+    <text x="978" y="355" class="step-copy">Editable charts &amp; tables</text>
+  </g>
+
+  <rect x="551" y="397" width="359" height="59" rx="14" fill="#e8f4f4" stroke="#bfe0df"/>
+  <circle cx="572" cy="426" r="11" fill="#168b96"/>
+  <path d="M567 426h10M572 421v10" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+  <text x="592" y="421" fill="#176d76" font-size="13" font-weight="700">Optional local Ollama service</text>
+  <text x="592" y="440" fill="#547985" font-size="11">Gets computed summaries for slide selection — not respondent rows</text>
+  <path d="M627 368V386H695" fill="none" stroke="#74a7af" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrow-light)"/>
+  <path d="M820 397V380H819V374" fill="none" stroke="#74a7af" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrow-light)"/>
+
+  <rect x="207" y="476" width="704" height="28" rx="10" fill="#e7edf3"/>
+  <circle cx="225" cy="490" r="4" fill="#168b96"/>
+  <text x="238" y="494" fill="#435f75" font-size="11" font-weight="600">Local file storage</text>
+  <text x="348" y="494" fill="#61768a" font-size="11">Temporary uploads cleaned up</text>
+  <circle cx="560" cy="490" r="3" fill="#9aafbd"/>
+  <text x="573" y="494" fill="#61768a" font-size="11">Generated decks retained for 7 days</text>
+  <circle cx="829" cy="490" r="3" fill="#9aafbd"/>
+  <text x="842" y="494" fill="#61768a" font-size="11">Docker volume</text>
+
+  <path d="M47 553h1107" stroke="#d3e0e8" stroke-width="1"/>
+  <circle cx="57" cy="583" r="12" fill="#dff0ef"/>
+  <path d="M52 583l3.5 3.5 6.5-7" fill="none" stroke="#168b96" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="79" y="580" fill="#123e63" font-size="13" font-weight="700">Numbers are computed in Python — AI helps choose the story, not invent the statistics.</text>
+  <text x="79" y="600" class="muted" font-size="11">Docker Compose runs the app and optional local model service separately.</text>
+  <text x="1150" y="596" text-anchor="end" fill="#8a9cab" font-size="10" font-weight="600" letter-spacing="1">SURVEY STUDIO</text>
+</svg>
